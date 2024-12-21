@@ -1,0 +1,36 @@
+﻿@model projet.Models.Intervention
+
+@{
+    ViewData["Title"] = "Créer une Intervention";
+}
+
+<h1>Créer une Intervention Technique</h1>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label for="ComplaintId">Réclamation</label>
+        <select class="form-control" id="ComplaintId" name="ComplaintId" required>
+            @foreach (var complaint in ViewData["Complaints"] as List<projet.Models.Complaint>)
+            {
+                <option value="@complaint.Id">@complaint.Description</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="TechnicianId">Technicien</label>
+        <select class="form-control" id="TechnicianId" name="TechnicianId" required>
+            @foreach (var technician in ViewData["Technicians"] as List<projet.Models.Technicien>)
+            {
+                <option value="@technician.TechnicienID">@technician.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="Date">Date de l'intervention</label>
+        <input type="date" class="form-control" id="Date" name="Date" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Créer</button>
+</form>

@@ -1,0 +1,35 @@
+﻿@model IEnumerable<projet.Models.Client>
+
+@{
+    ViewData["Title"] = "Clients";
+}
+
+<h1>Liste des Clients</h1>
+
+<p>
+    <a href="@Url.Action("Create")" class="btn btn-primary">Ajouter un client</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var client in Model)
+        {
+            <tr>
+                <td>@client.FullName</td>
+                <td>@client.Email</td>
+                <td>
+                    <a href="@Url.Action("Details", new { id = client.Id })" class="btn btn-info">Détails</a>
+                    <a href="@Url.Action("Edit", new { id = client.Id })" class="btn btn-warning">Modifier</a>
+                    <a href="@Url.Action("Delete", new { id = client.Id })" class="btn btn-danger">Supprimer</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

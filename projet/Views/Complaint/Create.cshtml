@@ -1,0 +1,36 @@
+﻿@model projet.Models.Complaint
+
+@{
+    ViewData["Title"] = "Créer une Réclamation";
+}
+
+<h1>Créer une Réclamation</h1>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label for="ClientId">Client</label>
+        <select class="form-control" id="ClientId" name="ClientId" required>
+            @foreach (var client in ViewData["Clients"] as List<projet.Models.Client>)
+            {
+                <option value="@client.Id">@client.FullName</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="ArticleId">Article</label>
+        <select class="form-control" id="ArticleId" name="ArticleId" required>
+            @foreach (var article in ViewData["Articles"] as List<projet.Models.Article>)
+            {
+                <option value="@article.ArticleID">@article.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="Description">Description</label>
+        <textarea class="form-control" id="Description" name="Description" rows="3"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Créer</button>
+</form>

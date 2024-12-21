@@ -1,0 +1,29 @@
+﻿@model IEnumerable<projet.Models.Invoice>
+
+@{
+    ViewData["Title"] = "Factures";
+}
+
+<h1>Liste des Factures</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Intervention</th>
+            <th>Montant</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var invoice in Model)
+        {
+            <tr>
+                <td>@invoice.Intervention.Description</td>
+                <td>@invoice.Amount.ToString("C")</td>
+                <td>
+                    <a href="@Url.Action("Details", new { id = invoice.Id })" class="btn btn-info">Détails</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

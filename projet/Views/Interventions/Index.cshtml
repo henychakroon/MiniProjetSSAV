@@ -1,0 +1,35 @@
+﻿@model IEnumerable<projet.Models.Intervention>
+
+@{
+    ViewData["Title"] = "Interventions Techniques";
+}
+
+<h1>Liste des Interventions</h1>
+
+<p>
+    <a href="@Url.Action("Create")" class="btn btn-primary">Ajouter une intervention</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Réclamation</th>
+            <th>Technicien</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var intervention in Model)
+        {
+            <tr>
+                <td>@intervention.Complaint.Description</td>
+                <td>@intervention.Technicien.Name</td>
+                <td>@intervention.Date.ToString("dd/MM/yyyy")</td>
+                <td>
+                    <a href="@Url.Action("Details", new { id = intervention.Id })" class="btn btn-info">Détails</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,14 @@
+﻿@model projet.Models.Client
+
+@{
+    ViewData["Title"] = "Détails du Client";
+}
+
+<h1>Détails du Client</h1>
+
+<div>
+    <h3>@Model.FullName</h3>
+    <p>Email: @Model.Email</p>
+</div>
+
+<a href="@Url.Action("Index")" class="btn btn-primary">Retour à la liste</a>

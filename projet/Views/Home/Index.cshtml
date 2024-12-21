@@ -1,0 +1,45 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to the SAV Management System!</h1>
+    <p class="lead">This application helps manage customer claims and track technical interventions.</p>
+    <hr class="my-4">
+    <p>Navigate through the system to view and manage claims, interventions, and more.</p>
+    <a class="btn btn-primary btn-lg" href="@Url.Action("Dashboard", "Home")" role="button">Go to Dashboard</a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Customer Claims</div>
+            <div class="card-body">
+                <p>View and manage customer claims, including their status and interventions.</p>
+                <a href="@Url.Action("Index", "Claims")" class="btn btn-primary">View Claims</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Technical Interventions</div>
+            <div class="card-body">
+                <p>Track and manage technical interventions, including pending and completed tasks.</p>
+                <a href="@Url.Action("Index", "Interventions")" class="btn btn-success">View Interventions</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Articles & Spare Parts</div>
+            <div class="card-body">
+                <p>Manage articles and spare parts used for interventions.</p>
+                <a href="@Url.Action("Index", "Articles")" class="btn btn-warning">View Articles</a>
+            </div>
+        </div>
+    </div>
+</div>

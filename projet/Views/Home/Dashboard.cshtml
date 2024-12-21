@@ -1,0 +1,63 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Total Claims</div>
+            <div class="card-body">
+                <h5 class="card-title">@Model.TotalClaims</h5>
+                <p class="card-text">Number of total claims received.</p>
+                <a href="@Url.Action("Index", "Claims")" class="btn btn-light">View Claims</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Completed Interventions</div>
+            <div class="card-body">
+                <h5 class="card-title">@Model.CompletedInterventions</h5>
+                <p class="card-text">Number of completed technical interventions.</p>
+                <a href="@Url.Action("Index", "Interventions")" class="btn btn-light">View Interventions</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Pending Interventions</div>
+            <div class="card-body">
+                <h5 class="card-title">@Model.PendingInterventions</h5>
+                <p class="card-text">Number of pending technical interventions.</p>
+                <a href="@Url.Action("Pending", "Interventions")" class="btn btn-light">View Pending Interventions</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>Recent Claims</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Claim ID</th>
+            <th>Client</th>
+            <th>Article</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model.RecentClaims)
+        {
+            <tr>
+                <td>@claim.Id</td>
+                <td>@claim.Client.Name</td>
+                <td>@claim.Article.Name</td>
+                <td>@claim.Status</td>
+            </tr>
+        }
+    </tbody>
+</table>

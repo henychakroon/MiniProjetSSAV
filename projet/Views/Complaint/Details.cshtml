@@ -1,0 +1,16 @@
+﻿@model projet.Models.Complaint
+
+@{
+    ViewData["Title"] = "Détails de la Réclamation";
+}
+
+<h1>Détails de la Réclamation</h1>
+
+<div>
+    <h3>Client: @Model.Client.FullName</h3>
+    <p>Article: @Model.Article.Name</p>
+    <p>Description: @Model.Description</p>
+    <p>Status: @Model.Status</p>
+</div>
+
+<a href="@Url.Action("Index")" class="btn btn-primary">Retour à la liste</a>
