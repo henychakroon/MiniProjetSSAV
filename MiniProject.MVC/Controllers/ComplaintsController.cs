@@ -8,53 +8,62 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using MiniProject.MVC.Data;
+using MiniProject.MVC.DTO;
 using MiniProject.MVC.Models;
+using MiniProject.MVC.Repositories;
 
 namespace MiniProject.MVC.Controllers
 {
+    [Authorize]
     public class ComplaintsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IGenericRepository<Complaint> repoCom;
+        private readonly IGenericRepository<Article> repoArt;
+        private readonly IGenericRepository<SparePart> repoSP;
+        private readonly IGenericRepository<Technicien> repoTec;
+        private readonly IGenericRepository<ComplaintSparePart> repoComSp;
 
-        public ComplaintsController(ApplicationDbContext context)
+        public ComplaintsController(ApplicationDbContext context, IGenericRepository<Complaint> repoCom, IGenericRepository<Article> repoArt, IGenericRepository<SparePart> repoSP, IGenericRepository<Technicien> repoTec, IGenericRepository<ComplaintSparePart> repoComSp)
         {
-            _context = context;
+            this.repoCom = repoCom;
+            this.repoArt = repoArt;
+            this.repoSP = repoSP;
+            this.repoTec = repoTec;
+            this.repoComSp = repoComSp;
         }
 
+        [Authorize(Roles =ApplicationRoles.SAV)]
         // GET: Complaints
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Complaint.Include(c => c.Article).Include(c => c.Client);
-            return View(await applicationDbContext.ToListAsync());
+
+            var list = await repoCom.GetAllAsync(predicate: null,new List<string> { "Article", "Client", "Technicien", "ComplaintSpareParts.SparePart" });
+
+            return View(list.Select(s => new ComplaintDTO(s)));
         }
 
-        // GET: Complaints/Details/5
-        public async Task<IActionResult> Details(int? id)
+        [Authorize(Roles = ApplicationRoles.CLIENT)]
+        // GET: Complaints
+        public async Task<IActionResult> MesReclamations()
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var currentUserId = User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).FirstOrDefault()?.Value;
 
-            var complaint = await _context.Complaint
-                .Include(c => c.Article)
-                .Include(c => c.Client)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (complaint == null)
-            {
-                return NotFound();
-            }
+            var list = await repoCom.GetAllAsync(predicate: c => c.ClientId == currentUserId, new List<string> { "Article", "Client", "Technicien", "ComplaintSpareParts.SparePart" });
 
-            return View(complaint);
+            return View(list.Select(s=>new ComplaintDTO(s)));
         }
+
+        [Authorize(Roles = ApplicationRoles.CLIENT)]
 
         // GET: Complaints/Create
-        [Authorize(Roles = $"{ApplicationRoles.CLIENT}")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name");
-            ViewData["ClientId"] = new SelectList(_context.Users, "Id", "Id");
-            return View();
+            ViewData["ArticleId"] = new SelectList(await repoArt.GetAllAsync(), "Id", "Name");
+            var Complaint = new ComplaintDTO
+            {
+                ClientId = User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).FirstOrDefault()?.Value
+            };
+            return View(Complaint);
         }
 
         // POST: Complaints/Create
@@ -62,23 +71,23 @@ namespace MiniProject.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles =$"{ApplicationRoles.CLIENT}")]
-        public async Task<IActionResult> Create([Bind("Id,Description,DateSubmitted,Status,ClientId,ArticleId")] Complaint complaint)
+        [Authorize(Roles = ApplicationRoles.CLIENT)]
+        public async Task<IActionResult> Create(ComplaintDTO complaintDTO)
         {
-            complaint.ClientId = User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).FirstOrDefault()?.Value;
-
             if (ModelState.IsValid)
             {
+                var complaint = complaintDTO.ToComplaint();
+                complaint.Status = ComplainState.EnAttente;
                 complaint.ClientId = User.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).FirstOrDefault()?.Value;
-                _context.Add(complaint);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                complaint.DateSubmitted = DateTime.Now;
+                repoCom.Add(complaint);
+                await repoCom.SaveAsync();
+                return RedirectToAction(nameof(MesReclamations));
             }
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name", complaint.ArticleId);
-            ViewData["ClientId"] = new SelectList(_context.Users, "Id", "Id", complaint.ClientId);
-            return View(complaint);
+            ViewData["ArticleId"] = new SelectList(await repoArt.GetAllAsync(), "Id", "Name", complaintDTO.ArticleId);
+            return View(complaintDTO);
         }
-
+        [Authorize(Roles = ApplicationRoles.SAV)]
         // GET: Complaints/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
@@ -87,14 +96,22 @@ namespace MiniProject.MVC.Controllers
                 return NotFound();
             }
 
-            var complaint = await _context.Complaint.FindAsync(id);
+            var complaint = await repoCom.GetByIdAsync(id.Value, new List<string> { "Article", "Client", "Technicien", "ComplaintSpareParts.SparePart" });
+
             if (complaint == null)
             {
                 return NotFound();
             }
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name", complaint.ArticleId);
-            ViewData["ClientId"] = new SelectList(_context.Users, "Id", "Id", complaint.ClientId);
-            return View(complaint);
+            ViewData["ArticleId"] = new SelectList(await repoArt.GetAllAsync(), "Id", "Name", complaint.ArticleId);
+            ViewData["TechnicienId"] = new SelectList(await repoTec.GetAllAsync(), "Id", "Name", complaint.TechnicienId);
+
+            var complaintDTO = new ComplaintDTO(complaint);
+
+            complaintDTO.SparePartsIds = complaint.ComplaintSpareParts?.Select(s => s.SparePartId).ToList() ?? new List<int>() ;
+
+            complaintDTO.AllComplaintSpareParts = ( await repoSP.GetAllAsync(predicate : a => a.ArticleId == complaint.ArticleId))?.Select(s=>new SparePartDTO(s)).ToList() ?? new List<SparePartDTO>();
+
+            return View(complaintDTO);
         }
 
         // POST: Complaints/Edit/5
@@ -102,9 +119,11 @@ namespace MiniProject.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Description,DateSubmitted,Status,ClientId,ArticleId")] Complaint complaint)
+        [Authorize(Roles = ApplicationRoles.SAV)]
+
+        public async Task<IActionResult> Edit(int id, ComplaintDTO complaintDTO)
         {
-            if (id != complaint.Id)
+            if (id != complaintDTO.Id)
             {
                 return NotFound();
             }
@@ -113,12 +132,19 @@ namespace MiniProject.MVC.Controllers
             {
                 try
                 {
-                    _context.Update(complaint);
-                    await _context.SaveChangesAsync();
+                    var complaint = complaintDTO.ToComplaint();
+                    
+                    var clearCp = await repoComSp.GetAllAsync(predicate : c => c.ComplaintId == complaint.Id);
+
+                    repoComSp.DeleteRange(clearCp);
+
+                    repoCom.Update(complaint);
+
+                    await repoCom.SaveAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ComplaintExists(complaint.Id))
+                    if (!ComplaintExists(complaintDTO.Id))
                     {
                         return NotFound();
                     }
@@ -129,23 +155,27 @@ namespace MiniProject.MVC.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name", complaint.ArticleId);
-            ViewData["ClientId"] = new SelectList(_context.Users, "Id", "Id", complaint.ClientId);
-            return View(complaint);
+            ViewData["ArticleId"] = new SelectList(await repoArt.GetAllAsync(), "Id", "Name", complaintDTO.ArticleId);
+            ViewData["TechnicienId"] = new SelectList(await repoTec.GetAllAsync(), "Id", "Name", complaintDTO.TechnicienId);
+
+            complaintDTO.AllComplaintSpareParts = (await repoSP.GetAllAsync(predicate: a => a.ArticleId == complaintDTO.ArticleId))?.Select(s => new SparePartDTO(s)).ToList() ?? new List<SparePartDTO>();
+
+            return View(complaintDTO);
         }
 
+
+        [Authorize(Roles = ApplicationRoles.CLIENT)]
+
         // GET: Complaints/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Annuler(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var complaint = await _context.Complaint
-                .Include(c => c.Article)
-                .Include(c => c.Client)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var complaint = await repoCom.GetByIdAsync(id.Value, new List<string> { "Article", "Client", "Technicien", "ComplaintSpareParts.SparePart" });
+
             if (complaint == null)
             {
                 return NotFound();
@@ -155,23 +185,25 @@ namespace MiniProject.MVC.Controllers
         }
 
         // POST: Complaints/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost, ActionName("AnnulerComplain")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        [Authorize(Roles = ApplicationRoles.CLIENT)]
+        public async Task<IActionResult> AnnulerComplain(int id)
         {
-            var complaint = await _context.Complaint.FindAsync(id);
+            var complaint = await repoCom.GetByIdAsync(id);
             if (complaint != null)
             {
-                _context.Complaint.Remove(complaint);
+                complaint.Status = ComplainState.Annulee;
+                repoCom.Update(complaint);
+                await repoCom.SaveAsync();
             }
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(MesReclamations));
         }
 
         private bool ComplaintExists(int id)
         {
-            return _context.Complaint.Any(e => e.Id == id);
+            return repoCom.Exit(id);
         }
     }
 }

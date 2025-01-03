@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -12,21 +13,22 @@ using MiniProject.MVC.Repositories;
 
 namespace MiniProject.MVC.Controllers
 {
+    [Authorize(Roles = ApplicationRoles.SAV)]
     public class SparePartsController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IGenericRepository<SparePart> repo;
+        private readonly IGenericRepository<SparePart> repoSP;
+        private readonly IGenericRepository<Article> repoAR;
 
-        public SparePartsController(ApplicationDbContext context, IGenericRepository<SparePart> repo)
+        public SparePartsController(IGenericRepository<Article> repoAR, IGenericRepository<SparePart> repoSP)
         {
-            _context = context;
-            this.repo = repo;
+            this.repoSP = repoSP;
+            this.repoAR = repoAR;
         }
 
         // GET: SpareParts
         public async Task<IActionResult> Index()
         {
-            var data =await repo.GetAllAsync(predicate:null,includes:new List<string> { "Article" }) ;//_context.SpareParts.Include(s => s.Article);
+            var data =await repoSP.GetAllAsync(predicate:null,includes:new List<string> { "Article" }) ;//_context.SpareParts.Include(s => s.Article);
            // return View(await applicationDbContext.ToListAsync());
             return View( data.Select(s=>new SparePartDTO(s)) );
         }
@@ -39,9 +41,7 @@ namespace MiniProject.MVC.Controllers
                 return NotFound();
             }
 
-            var sparePart = await _context.SpareParts
-                .Include(s => s.Article)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var sparePart = await repoSP.GetByIdAsync(id.Value, new List<string> { "Article" });
             if (sparePart == null)
             {
                 return NotFound();
@@ -51,9 +51,10 @@ namespace MiniProject.MVC.Controllers
         }
 
         // GET: SpareParts/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name");
+            var articles = await repoAR.GetAllAsync();
+            ViewData["ArticleId"] = new SelectList(articles.ToList(), "Id", "Name");
             return View();
         }
 
@@ -62,16 +63,17 @@ namespace MiniProject.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Price,ArticleId")] SparePartDTO sparePartDTO)
+        public async Task<IActionResult> Create(SparePartDTO sparePartDTO)
         {
             if (ModelState.IsValid)
             {
                  
-                _context.Add(sparePartDTO.ToSparePart());
-                await _context.SaveChangesAsync();
+                repoSP.Add(sparePartDTO.ToSparePart());
+                await repoSP.SaveAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name", sparePartDTO.ArticleId);
+            var articles = await repoAR.GetAllAsync();
+            ViewData["ArticleId"] = new SelectList(articles.ToList(), "Id", "Name");
             return View(sparePartDTO);
         }
 
@@ -83,13 +85,14 @@ namespace MiniProject.MVC.Controllers
                 return NotFound();
             }
 
-            var sparePart = await _context.SpareParts.FindAsync(id);
+            var sparePart = await repoSP.GetByIdAsync(id.Value, new List<string> { "Article" });
             if (sparePart == null)
             {
                 return NotFound();
             }
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name", sparePart.ArticleId);
-            return View(sparePart);
+            var articles = await repoAR.GetAllAsync();
+            ViewData["ArticleId"] = new SelectList(articles.ToList(), "Id", "Name");
+            return View(new SparePartDTO(sparePart));
         }
 
         // POST: SpareParts/Edit/5
@@ -97,9 +100,9 @@ namespace MiniProject.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Price,ArticleId")] SparePart sparePart)
+        public async Task<IActionResult> Edit(int id,SparePartDTO sparePartDTO)
         {
-            if (id != sparePart.Id)
+            if (id != sparePartDTO.Id)
             {
                 return NotFound();
             }
@@ -108,24 +111,19 @@ namespace MiniProject.MVC.Controllers
             {
                 try
                 {
-                    _context.Update(sparePart);
-                    await _context.SaveChangesAsync();
+
+                    repoSP.Update(sparePartDTO.ToSparePart());
+                    await repoSP.SaveAsync();
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (Exception ex)
                 {
-                    if (!SparePartExists(sparePart.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    return NotFound();
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ArticleId"] = new SelectList(_context.Articles, "Id", "Name", sparePart.ArticleId);
-            return View(sparePart);
+            var articles = await repoAR.GetAllAsync();
+            ViewData["ArticleId"] = new SelectList(articles.ToList(), "Id", "Name");
+            return View(sparePartDTO);
         }
 
         // GET: SpareParts/Delete/5
@@ -136,9 +134,7 @@ namespace MiniProject.MVC.Controllers
                 return NotFound();
             }
 
-            var sparePart = await _context.SpareParts
-                .Include(s => s.Article)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var sparePart = await repoSP.GetByIdAsync(id.Value, new List<string> { "Article" });
             if (sparePart == null)
             {
                 return NotFound();
@@ -152,19 +148,14 @@ namespace MiniProject.MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var sparePart = await _context.SpareParts.FindAsync(id);
-            if (sparePart != null)
+            var sparePart = await repoSP.GetByIdAsync(id, new List<string> { "Article" });
+            if (sparePart == null)
             {
-                _context.SpareParts.Remove(sparePart);
+                return NotFound();
             }
-
-            await _context.SaveChangesAsync();
+            repoSP.Delete(sparePart);
+            await repoSP.SaveAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool SparePartExists(int id)
-        {
-            return _context.SpareParts.Any(e => e.Id == id);
         }
     }
 }

@@ -3,12 +3,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MiniProject.MVC.Models
 {
-    public class Article : BaseModel
+    public class Technicien : BaseModel
     {
         [Required]
         public string Name { get; set; }
-        [Required]
-        public bool IsUnderWarranty { get; set; }
-        public DateTime PurchaseDate { get; set; }
     }
 }

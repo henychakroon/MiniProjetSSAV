@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MiniProject.MVC.Data;
 
@@ -11,9 +12,11 @@ using MiniProject.MVC.Data;
 namespace MiniProject.MVC.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241228184543_ComplainSp")]
+    partial class ComplainSp
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -284,7 +287,7 @@ namespace MiniProject.MVC.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TechnicienId")
+                    b.Property<int>("TechnicienId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -430,7 +433,9 @@ namespace MiniProject.MVC.Data.Migrations
 
                     b.HasOne("MiniProject.MVC.Models.Technicien", "Technicien")
                         .WithMany()
-                        .HasForeignKey("TechnicienId");
+                        .HasForeignKey("TechnicienId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Article");
 

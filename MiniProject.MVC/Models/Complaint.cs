@@ -1,24 +1,29 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MiniProject.MVC.Models.Base;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MiniProject.MVC.Models
 {
-    public class Complaint
+    public class Complaint : BaseModel
     {
-        public int Id { get; set; }
 
         [Required]
         public string Description { get; set; }
 
-        public DateTime DateSubmitted { get; set; } = DateTime.Now;
+        public DateTime DateSubmitted { get; set; }
 
-        public string Status { get; set; } = "En attente";
+        public string Status { get; set; }
 
         public string ClientId { get; set; }
         public ApplicationUser Client { get; set; }
-
-        [ForeignKey("Article")]
         public int ArticleId { get; set; }
-        public virtual Article Article { get; set; }
+        public Article Article { get; set; }
+
+        public int? TechnicienId { get; set; }
+        public Technicien? Technicien { get; set; }
+
+        public ICollection<ComplaintSparePart>? ComplaintSpareParts { get; set; }
+
+        public decimal MenPrice { get; set; }
     }
 }

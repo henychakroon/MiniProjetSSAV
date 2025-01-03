@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MiniProject.MVC.Data;
+using MiniProject.MVC.Models.Base;
 using System.Linq.Expressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace MiniProject.MVC.Repositories
 {
-    public class GenericRepository<T> : IGenericRepository<T> where T : class
+    public class GenericRepository<T> : IGenericRepository<T> where T : BaseModel
     {
         private readonly ApplicationDbContext _context;
         private readonly DbSet<T> _dbSet;
@@ -41,9 +43,20 @@ namespace MiniProject.MVC.Repositories
         }
 
         // Get by ID
-        public async Task<T> GetByIdAsync(object id)
+        public async Task<T> GetByIdAsync(int id, List<string> includes = null)
         {
-            return await _dbSet.FindAsync(id);
+            IQueryable<T> query = _dbSet;
+
+            // Apply includes
+            if (includes != null)
+            {
+                foreach (var include in includes)
+                {
+                    query = query.Include(include);
+                }
+            }
+
+            return await query.FirstOrDefaultAsync(x=>x.Id == id);
         }
 
         // Find by condition
@@ -53,12 +66,12 @@ namespace MiniProject.MVC.Repositories
         }
 
         // Add a new entity
-        public async Task AddAsync(T entity)
+        public void Add(T entity)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
-            await _dbSet.AddAsync(entity);
+            _dbSet.Add(entity);
         }
 
         // Update an existing entity
@@ -80,20 +93,22 @@ namespace MiniProject.MVC.Repositories
             _dbSet.Remove(entity);
         }
 
-        // Delete by ID
-        public async Task DeleteByIdAsync(object id)
-        {
-            var entity = await GetByIdAsync(id);
-            if (entity != null)
-            {
-                Delete(entity);
-            }
-        }
 
         // Save changes to the database
         public async Task SaveAsync()
         {
             await _context.SaveChangesAsync();
+        }
+
+        public bool Exit(int Id)
+        {
+            IQueryable<T> query = _dbSet;
+            return _dbSet.Any(_dbSet => _dbSet.Id == Id);
+        }
+
+        public void DeleteRange(IEnumerable<T> entities)
+        {
+            _dbSet.RemoveRange(entities);
         }
     }
 }

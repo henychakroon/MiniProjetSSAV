@@ -60,7 +60,7 @@ static async Task SeedRolesAsync(IServiceProvider serviceProvider)
     var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
     // Define default roles
-    var roles = new[] { ApplicationRoles.CLIENT, ApplicationRoles.SAV, ApplicationRoles.TECH };
+    var roles = new[] { ApplicationRoles.CLIENT, ApplicationRoles.SAV};
 
     foreach (var role in roles)
     {

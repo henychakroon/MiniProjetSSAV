@@ -4,6 +4,5 @@
     {
         public const string CLIENT = "CLIENT";
         public const string SAV = "SAV";
-        public const string TECH = "TECH";
     }
 }

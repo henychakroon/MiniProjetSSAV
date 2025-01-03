@@ -13,23 +13,24 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace MiniProject.MVC.Controllers
 {
-    [Authorize(Roles =ApplicationRoles.SAV)]
-    public class ArticlesController : Controller
+    [Authorize(Roles = ApplicationRoles.SAV)]
+    public class TechnicienController : Controller
     {
-        private readonly IGenericRepository<Article> repoArt;
-        public ArticlesController(IGenericRepository<Article> repoArt)
+        private readonly IGenericRepository<Technicien> repoTec;
+
+        public TechnicienController(IGenericRepository<Technicien> repoTec)
         {
-            this.repoArt = repoArt;
+            this.repoTec = repoTec;
         }
 
         // GET: Technicien
         public async Task<IActionResult> Index()
         {
-            var data = await repoArt.GetAllAsync(
+            var data = await repoTec.GetAllAsync(
                 predicate: null,
                 includes: new List<string> { }
             );
-            return View(data.Select(t => new ArticleDTO(t)));
+            return View(data.Select(t => new TechnicienDTO(t)));
         }
 
         // GET: Technicien/Details/5
@@ -40,13 +41,13 @@ namespace MiniProject.MVC.Controllers
                 return NotFound();
             }
 
-            var ArticleDTO = await repoArt.GetByIdAsync(id.Value, new List<string> { });
-            if (ArticleDTO == null)
+            var technicienDTO = await repoTec.GetByIdAsync(id.Value, new List<string> { });
+            if (technicienDTO == null)
             {
                 return NotFound();
             }
 
-            return View(ArticleDTO);
+            return View(technicienDTO);
         }
 
         // GET: Technicien/Create
@@ -60,15 +61,15 @@ namespace MiniProject.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ArticleDTO ArticleDTO)
+        public async Task<IActionResult> Create(TechnicienDTO technicienDTO)
         {
             if (ModelState.IsValid)
             {
-                repoArt.Add(ArticleDTO.ToArticle());
-                await repoArt.SaveAsync();
+                repoTec.Add(technicienDTO.ToTechnicien());
+                await repoTec.SaveAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(ArticleDTO);
+            return View(technicienDTO);
         }
 
         // GET: Technicien/Edit/5
@@ -79,12 +80,12 @@ namespace MiniProject.MVC.Controllers
                 return NotFound();
             }
 
-            var Article= await repoArt.GetByIdAsync(id.Value, new List<string> { });
-            if (Article== null)
+            var technicien = await repoTec.GetByIdAsync(id.Value, new List<string> { });
+            if (technicien == null)
             {
                 return NotFound();
             }
-            return View(new ArticleDTO(Article));
+            return View(new TechnicienDTO(technicien));
         }
 
         // POST: Technicien/Edit/5
@@ -92,9 +93,9 @@ namespace MiniProject.MVC.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ArticleDTO ArticleDTO)
+        public async Task<IActionResult> Edit( int id, TechnicienDTO technicienDTO)
         {
-            if (id != ArticleDTO.Id)
+            if (id != technicienDTO.Id)
             {
                 return NotFound();
             }
@@ -103,8 +104,8 @@ namespace MiniProject.MVC.Controllers
             {
                 try
                 {
-                    repoArt.Update(ArticleDTO.ToArticle());
-                    await repoArt.SaveAsync();
+                    repoTec.Update(technicienDTO.ToTechnicien());
+                    await repoTec.SaveAsync();
                 }
                 catch (Exception)
                 {
@@ -112,7 +113,7 @@ namespace MiniProject.MVC.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(ArticleDTO);
+            return View(technicienDTO);
         }
 
         // GET: Technicien/Delete/5
@@ -123,14 +124,14 @@ namespace MiniProject.MVC.Controllers
                 return NotFound();
             }
 
-            var ArticleDTO = await repoArt.GetByIdAsync(id.Value, new List<string> { });
-
-            if (ArticleDTO == null)
+            var technicienDTO = await repoTec.GetByIdAsync(id.Value, new List<string> {  });
+           
+            if (technicienDTO == null)
             {
                 return NotFound();
             }
 
-            return View(ArticleDTO);
+            return View(technicienDTO);
         }
 
         // POST: Technicien/Delete/5
@@ -138,17 +139,17 @@ namespace MiniProject.MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var technicien = await repoArt.GetByIdAsync(id, new List<string> { });
+            var technicien = await repoTec.GetByIdAsync(id, new List<string> { });
             if (technicien == null)
                 if (technicien != null)
-                {
+            {
                     return NotFound();
                 }
-            repoArt.Delete(technicien);
-            await repoArt.SaveAsync();
+            repoTec.Delete(technicien);
+            await repoTec.SaveAsync();
             return RedirectToAction(nameof(Index));
         }
 
-
+        
     }
 }
